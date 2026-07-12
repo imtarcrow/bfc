@@ -47,8 +47,7 @@ int main(int argc, char** argv)
     struct ParseResult* parse_result = parse(code_buffer, filesize);
 
     if (parse_result == NULL) {
-        printf("ERROR NULL\n");
-        exit(100);
+        printf("parsing failed\n");
     }
 
     free(parse_result->command_buffer);
