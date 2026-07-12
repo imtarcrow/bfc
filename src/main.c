@@ -4,17 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "parse.h"
 #include "state.h"
-
-long get_filesize(FILE* file)
-{
-    long current_position = ftell(file);
-    fseek(file, 0, SEEK_END);
-    long size = ftell(file);
-    fseek(file, current_position, SEEK_SET);
-
-    return size;
-}
 
 int main(int argc, char** argv)
 {
@@ -52,6 +43,16 @@ int main(int argc, char** argv)
 
     struct InterpreterState state;
     state_init(&state, UINT16_MAX + 1);
+
+    struct ParseResult* parse_result = parse(code_buffer, filesize);
+
+    if (parse_result == NULL) {
+        printf("ERROR NULL\n");
+        exit(100);
+    }
+
+    free(parse_result->command_buffer);
+    free(parse_result);
 
     while (1) {
         if (state.code_position >= filesize) {

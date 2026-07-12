@@ -14,6 +14,7 @@ endif()
 add_executable(bfc 
     ./src/main.c
     ./src/state.c
+    ./src/parse.c
 )
 
 target_include_directories(bfc PRIVATE ./include/)
