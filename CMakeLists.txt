@@ -11,7 +11,10 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-add_executable(bfc ./src/main.c)
+add_executable(bfc 
+    ./src/main.c
+    ./src/state.c
+)
 
 target_include_directories(bfc PRIVATE ./include/)
 target_compile_options(bfc PRIVATE 
