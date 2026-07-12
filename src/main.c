@@ -14,18 +14,18 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    FILE* code = fopen(argv[1], "r");
-
-    if (code == NULL) {
-        printf("File could not be opened!\n");
-        return 2;
-    }
-
     printf("command executed: ");
     for (int i = 0; i < argc; i++) {
         printf("%s ", argv[i]);
     }
+
     printf("\n");
+
+    FILE* code = fopen(argv[1], "r");
+    if (code == NULL) {
+        printf("File could not be opened!\n");
+        return 2;
+    }
 
     unsigned long filesize = (unsigned long)get_filesize(code);
     printf("file: %s | %p | size: %ld\n", argv[1], (void*)code, filesize);
@@ -34,88 +34,95 @@ int main(int argc, char** argv)
     fread(code_buffer, 1, filesize, code);
     fclose(code);
 
-    printf("\n####################\n\n");
+    printf("\n====================\n\n");
     for (unsigned long i = 0; i < filesize; i++) {
         printf("%c", code_buffer[i]);
     }
 
-    printf("\n####################\n\n");
+    printf("\n====================\n\n");
 
     struct InterpreterState state;
     state_init(&state, UINT16_MAX + 1);
 
     struct ParseResult* parse_result = parse(code_buffer, filesize);
+    free(code_buffer);
 
     if (parse_result == NULL) {
         printf("parsing failed\n");
     }
 
-    free(parse_result->command_buffer);
-    free(parse_result);
-
     while (1) {
-        if (state.code_position >= filesize) {
+        if (state.code_position >= parse_result->command_count) {
             break;
         }
 
-        uint8_t command = code_buffer[state.code_position];
+        struct Command cmd = parse_result->command_buffer[state.code_position];
 
-        switch (command) {
-        case '>':
-            state.tape_position++;
+        switch (cmd.kind) {
+        case IncreasePointer:
+            state.tape_position += cmd.data.count;
             break;
-        case '<':
-            state.tape_position--;
+        case DecreasePointer:
+            state.tape_position -= cmd.data.count;
             break;
-        case '+':
-            state.tape[state.tape_position]++;
+        case Add:
+            state.tape[state.tape_position] += cmd.data.count;
             break;
-        case '-':
-            state.tape[state.tape_position]--;
+        case Subtract:
+            state.tape[state.tape_position] -= cmd.data.count;
             break;
-        case '.':
-            printf("%c", state.tape[state.tape_position]);
+        case OutputChar:
+            for (unsigned int i = 0; i < cmd.data.count; i++) {
+                printf("%c", state.tape[state.tape_position]);
+            }
             break;
-        case ',': {
-            int ch = getchar();
-            state.tape[state.tape_position] = (ch == EOF) ? 0 : (uint8_t)ch;
+        case InputChar:
+            // TODO: use input buffer instead of stdin
+            for (unsigned int i = 0; i < cmd.data.count; i++) {
+                int ch = getchar();
+                state.tape[state.tape_position] = (ch == EOF) ? 0 : (uint8_t)ch;
+            }
             break;
-        }
-        case '[':
+        case LoopStart:
             if (state.tape[state.tape_position] == 0) {
                 int depth = 1;
                 while (depth != 0) {
                     state.code_position++;
-                    if (code_buffer[state.code_position] == '[') {
+                    if (parse_result->command_buffer[state.code_position].kind == LoopStart) {
                         depth++;
                     }
-                    if (code_buffer[state.code_position] == ']') {
+                    if (parse_result->command_buffer[state.code_position].kind == LoopEnd) {
                         depth--;
                     }
                 }
             }
             break;
-        case ']':
+        case LoopEnd:
             if (state.tape[state.tape_position] != 0) {
                 int depth = 1;
                 while (depth != 0) {
                     state.code_position--;
-                    if (code_buffer[state.code_position] == ']') {
+                    if (parse_result->command_buffer[state.code_position].kind == LoopEnd) {
                         depth++;
                     }
-                    if (code_buffer[state.code_position] == '[') {
+                    if (parse_result->command_buffer[state.code_position].kind == LoopStart) {
                         depth--;
                     }
                 }
             }
             break;
+        default:
+            printf("INVALID COMMAND! %d tried to execute!", cmd.kind);
+            break;
         }
 
-        state.code_position += 1;
+        state.code_position++;
     }
 
+    free(parse_result->command_buffer);
+    free(parse_result);
+
     state_delete(&state);
-    free(code_buffer);
 
     return 0;
 }

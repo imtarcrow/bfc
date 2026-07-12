@@ -19,7 +19,7 @@ struct ParseResult* parse(char* code, unsigned long size)
 
     // buffer used to store all the parsed commands
     struct Command* command_buffer = malloc(sizeof(struct Command) * stripped_size);
-    unsigned long command_buffer_index = 0;
+    unsigned long command_index = 0;
 
     // loops over all of the characters in the stripped buffer
     // if last command is same as before (for add, sub, pointer left & right) the amount is increased
@@ -36,9 +36,15 @@ struct ParseResult* parse(char* code, unsigned long size)
         }
         else {
             // if its a new command, move the old one into the buffer
-            command_buffer[command_buffer_index] = current_command;
-            command_buffer_index++;
+            // except if it is the first command (i = 0) then it should not be pushed
+            if (i != 0) {
+                command_buffer[command_index] = current_command;
+                command_index++;
+            }
+            last_command_char = command_char;
         }
+
+        current_command.data.count = 1;
 
         switch (command_char) {
         case '>':
@@ -72,11 +78,9 @@ struct ParseResult* parse(char* code, unsigned long size)
     }
 
     free(code_stripped);
-
-    unsigned long command_count = command_buffer_index + 1;
-
+    //
     // realloc to trim the command_buffer to only the size it needs
-    void* tmp = realloc(command_buffer, command_count * sizeof(struct Command));
+    void* tmp = realloc(command_buffer, command_index * sizeof(struct Command));
     if (tmp == NULL) {
         free(command_buffer);
         return NULL;
@@ -86,7 +90,7 @@ struct ParseResult* parse(char* code, unsigned long size)
     struct ParseResult* result = malloc(sizeof(struct ParseResult));
 
     result->command_buffer = tmp;
-    result->command_count = command_count;
+    result->command_count = command_index;
 
     return result;
 }
