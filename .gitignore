@@ -1,4 +1,5 @@
 build/
+examples/
 
 # Created by https://www.toptal.com/developers/gitignore/api/c,linux,macos,git,cmake
 # Edit at https://www.toptal.com/developers/gitignore?templates=c,linux,macos,git,cmake
