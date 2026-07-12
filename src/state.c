@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-int state_init(struct InterpreterState* state, long cell_count)
+int state_init(struct InterpreterState* state, unsigned long cell_count)
 {
     state->tape_size = cell_count;
     state->tape_position = 0;
