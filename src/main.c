@@ -47,6 +47,38 @@ int main(int argc, char** argv)
     struct ParseResult* parse_result = parse(code_buffer, filesize);
     free(code_buffer);
 
+    for (unsigned long i = 0; i < parse_result->command_count; i++) {
+        switch (parse_result->command_buffer[i].kind) {
+        case IncreasePointer:
+            printf("> %d\n", parse_result->command_buffer[i].data.count);
+            break;
+        case DecreasePointer:
+            printf("< %d\n", parse_result->command_buffer[i].data.count);
+            break;
+        case Add:
+            printf("+ %d\n", parse_result->command_buffer[i].data.count);
+            break;
+        case Subtract:
+            printf("- %d\n", parse_result->command_buffer[i].data.count);
+            break;
+        case OutputChar:
+            printf(". %d\n", parse_result->command_buffer[i].data.count);
+            break;
+        case InputChar:
+            printf(", %d\n", parse_result->command_buffer[i].data.count);
+            break;
+        case LoopStart:
+            printf("Loop Start %d\n", parse_result->command_buffer[i].data.index);
+            break;
+        case LoopEnd:
+            printf("Loop End %d\n", parse_result->command_buffer[i].data.index);
+            break;
+        default:
+            printf("INVALID COMMAND! %d tried to execute!", parse_result->command_buffer[i].kind);
+            break;
+        }
+    }
+
     if (parse_result == NULL) {
         printf("parsing failed\n");
     }
@@ -84,31 +116,14 @@ int main(int argc, char** argv)
             }
             break;
         case LoopStart:
+
             if (state.tape[state.tape_position] == 0) {
-                int depth = 1;
-                while (depth != 0) {
-                    state.code_position++;
-                    if (parse_result->command_buffer[state.code_position].kind == LoopStart) {
-                        depth++;
-                    }
-                    if (parse_result->command_buffer[state.code_position].kind == LoopEnd) {
-                        depth--;
-                    }
-                }
+                state.code_position = parse_result->jump_table[cmd.data.index].end;
             }
             break;
         case LoopEnd:
             if (state.tape[state.tape_position] != 0) {
-                int depth = 1;
-                while (depth != 0) {
-                    state.code_position--;
-                    if (parse_result->command_buffer[state.code_position].kind == LoopEnd) {
-                        depth++;
-                    }
-                    if (parse_result->command_buffer[state.code_position].kind == LoopStart) {
-                        depth--;
-                    }
-                }
+                state.code_position = parse_result->jump_table[cmd.data.index].start;
             }
             break;
         default:
@@ -119,6 +134,7 @@ int main(int argc, char** argv)
         state.code_position++;
     }
 
+    free(parse_result->jump_table);
     free(parse_result->command_buffer);
     free(parse_result);
 
