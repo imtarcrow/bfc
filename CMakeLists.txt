@@ -13,8 +13,8 @@ endif()
 
 add_executable(bfc 
     ./src/main.c
-    ./src/state.c
-    ./src/parse.c
+    ./src/interpreter.c
+    ./src/token.c
 )
 
 target_include_directories(bfc PRIVATE ./include/)
